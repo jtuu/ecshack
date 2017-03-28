@@ -1,9 +1,12 @@
 import {Component, ComponentState} from "./Component";
-import {ComponentEnum} from "../../Enum";
+import {ComponentType, SpriteId} from "../../Enum";
 
 export interface RenderableState extends ComponentState{
-  char: string;
-  sprite: HTMLImageElement;
+  screenX: number;
+  screenY: number;
+  spriteId: SpriteId;
+  needsUpdate: boolean;
+  layer: number
 }
 
 export interface RenderableComponent extends Component<RenderableState>{
@@ -11,10 +14,13 @@ export interface RenderableComponent extends Component<RenderableState>{
 }
 
 export const Renderable: RenderableComponent = {
-  enum: ComponentEnum.Renderable,
-  name: ComponentEnum[ComponentEnum.Renderable],
+  enum: ComponentType.Renderable,
+  name: ComponentType[ComponentType.Renderable],
   state: {
-    char: "?",
-    sprite: new Image()
+    screenX: null,
+    screenY: null,
+    spriteId: null,
+    needsUpdate: true,
+    layer: 0
   }
 }

@@ -1,9 +1,9 @@
 import {Component, ComponentState} from "./Component";
-import {ComponentEnum} from "../../Enum";
+import {ComponentType} from "../../Enum";
 import Entity from "../Entity";
 
 export interface StorageState extends ComponentState{
-  contents: Array<Entity>;
+  contents: Set<Entity>;
   maxSize: number;
 }
 
@@ -12,10 +12,12 @@ export interface StorageComponent extends Component<StorageState>{
 }
 
 export const Storage: StorageComponent = {
-  enum: ComponentEnum.Storage,
-  name: ComponentEnum[ComponentEnum.Storage],
+  enum: ComponentType.Storage,
+  name: ComponentType[ComponentType.Storage],
   state: {
-    contents: [],
-    maxSize: 0
+    maxSize: 0,
+    get contents(){
+      return new Set();
+    }
   }
 }

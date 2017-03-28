@@ -1,5 +1,5 @@
 import {Component, ComponentState} from "./Component";
-import {ComponentEnum} from "../../Enum";
+import {ComponentType} from "../../Enum";
 
 export interface ConstantPositionState extends ComponentState{
   x: number;
@@ -11,8 +11,8 @@ export interface ConstantPositionComponent extends Component<ConstantPositionSta
 }
 
 export const ConstantPosition: ConstantPositionComponent = {
-  enum: ComponentEnum.ConstantPosition,
-  name: ComponentEnum[ComponentEnum.ConstantPosition],
+  enum: ComponentType.ConstantPosition,
+  name: ComponentType[ComponentType.ConstantPosition],
   state: {
     x: null,
     y: null

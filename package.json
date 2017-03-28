@@ -1,5 +1,5 @@
 {
-  "name": "eschack2",
+  "name": "ecshack",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -9,7 +9,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@types/lodash": "^4.14.52",
-    "lodash": "^4.17.4"
+    "@types/pixi.js": "^4.3.2",
+    "express": "^4.15.0",
+    "pixi.js": "^4.4.1",
+    "raw-loader": "^0.5.1",
+    "redux": "^3.6.0",
+    "ts-loader": "^2.0.1",
+    "webpack": "^2.2.1"
   }
 }

@@ -1,5 +1,5 @@
 import {Component, ComponentState} from "./Component";
-import {ComponentEnum} from "../../Enum";
+import {ComponentType} from "../../Enum";
 import Entity from "../Entity"
 
 export interface TileReferenceState extends ComponentState{
@@ -11,8 +11,8 @@ export interface TileReferenceComponent extends Component<TileReferenceState>{
 }
 
 export const TileReference: TileReferenceComponent = {
-  enum: ComponentEnum.TileReference,
-  name: ComponentEnum[ComponentEnum.TileReference],
+  enum: ComponentType.TileReference,
+  name: ComponentType[ComponentType.TileReference],
   state: {
     tile: null
   }
