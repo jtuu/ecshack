@@ -6,3 +6,7 @@ interface Coordinate{
 type RecursivePartial<T> = {
     [P in keyof T]?: RecursivePartial<T[P]>;
 }
+
+declare module "*.des"{
+  export const normalize: () => string;
+}
