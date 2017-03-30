@@ -27,7 +27,7 @@ export default class Renderer{
   }
 
   public getSprite(spriteId: SpriteId): PIXI.Sprite{
-    const filename = `${SpriteId[spriteId]}.png`
+    const filename = SpriteId[spriteId];
 
     if(this.textures.hasOwnProperty(filename)){
       return new PIXI.Sprite(this.textures[filename]);
