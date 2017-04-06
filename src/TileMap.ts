@@ -1,15 +1,15 @@
 import Entity from "./ecs/Entity";
 import Grid from "./Grid";
-import * as Constants from "./Constants";
 import {entityManager} from "./EngineWorker";
 import TileAssemblageData from "./ecs/AssemblageData/Tile";
-import {ComponentType} from "./Enum";
-import {TileReference} from "./ecs/Components";
+import {ComponentType, TileOpacity} from "./Enum";
+import {isEntity} from "./ecs/EntityUtils";
+import {getPosition} from "./ecs/EntityUtils"
 
 export default class TileMap{
   public grid: Grid<Entity>;
 
-  constructor(width: number = Constants.GLOBAL_WORLD_MAX_X, height: number = Constants.GLOBAL_WORLD_MAX_Y){
+  constructor(width: number = WORLD_MAX_X, height: number = WORLD_MAX_Y){
     this.grid = new Grid<Entity>(width, height);
     this.grid.initializeElements((i, x, y) => {
       const tile = entityManager.createEntityFromAssemblage(TileAssemblageData);
@@ -26,7 +26,7 @@ export default class TileMap{
     contents.add(entity);
 
     if(!entityManager.hasComponent(entity, ComponentType.TileReference)){
-      entityManager.addComponent(entity, TileReference, {tile});
+      entityManager.addComponent(entity, ComponentType.TileReference, {tile});
     }else{
       entityManager.getComponent(entity, ComponentType.TileReference).state.tile = tile;
     }
@@ -63,6 +63,8 @@ export default class TileMap{
 
   public getContents(x: number, y: number): Set<Entity>{
     const tile = this.grid.getByXy(x, y);
+    if(!isEntity(tile)) return null;
+
     return entityManager.getComponent(tile, ComponentType.Storage).state.contents;
   }
 
@@ -77,5 +79,23 @@ export default class TileMap{
         this.add(ox + x, oy + y, e);
       });
     }
+  }
+
+  public getOpacity(x: number, y: number): TileOpacity{
+    const tile = this.grid.getByXy(x, y);
+    if(isEntity(tile)){
+      if(entityManager.hasComponent(tile, ComponentType.Wall)){
+        return TileOpacity.OPAQUE;
+      }
+      
+      /*
+      const contents = <Set<Entity>>entityManager.getComponent(tile, ComponentType.Storage).state.contents;
+      contents.forEach(entity => {
+
+      });
+      */
+    }
+
+    return TileOpacity.CLEAR;
   }
 }

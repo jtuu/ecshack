@@ -6,7 +6,7 @@ export interface RenderableState extends ComponentState{
   screenY: number;
   spriteId: SpriteId;
   needsUpdate: boolean;
-  layer: number
+  layer: number;
 }
 
 export interface RenderableComponent extends Component<RenderableState>{

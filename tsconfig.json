@@ -19,14 +19,15 @@
             "WebWorker",
             "DOM"
         ],
-        "types": []
+        "types": [],
+        "outDir": "build/trash"
     },
     "include": [
       "src/**/*",
       "lib/**/*"
     ],
     "exclude": [
-        "node_modules"
+      "node_modules"
     ],
     "compileOnSave": false,
     "buildOnSave": false,

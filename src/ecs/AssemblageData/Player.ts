@@ -1,6 +1,5 @@
 import AssemblageData from "./AssemblageData";
 import {ComponentType} from "../../Enum";
-import {ConstantPosition} from "../Components/ConstantPosition";
 import {SpriteId} from "../../Enum";
 
 const PlayerAssemblageData: AssemblageData = {
@@ -12,6 +11,9 @@ const PlayerAssemblageData: AssemblageData = {
   [ComponentType.KeyboardControlled]: {
     needsInput: true
   },
-  [ComponentType.Movement]: {}
+  [ComponentType.Movement]: {},
+  [ComponentType.Vision]: {
+    shouldRender: true
+  }
 };
 export default PlayerAssemblageData;

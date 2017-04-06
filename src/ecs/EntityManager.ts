@@ -182,5 +182,7 @@ export default class EntityManager{
 
       subscriptions.push(subscriber);
     }
+
+    this.getAllEntities(...componentTypes).forEach(e => subscriber.add(e));
   }
 }

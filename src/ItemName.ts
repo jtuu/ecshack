@@ -1,6 +1,5 @@
 import {engine} from "./EngineWorker";
 import Rng from "./Random";
-import {WORLDGEN_NAME_MAX_LENGTH} from "./Constants";
 
 const maxIters = 150;
 const alphabetStart = "a".charCodeAt(0);
@@ -53,12 +52,12 @@ function getWeightedRandomConsonant(seed: number): string{
   return weightedConsonants[seed % (weightedConsonants.length - 1)];
 }
 
-export function makeName(seed?: number){
+export function makeName1(seed?: number){
   var rng: Rng;
   if(seed === undefined){
-    rng = new Rng(seed);
-  }else{
     rng = engine.worldGenRng;
+  }else{
+    rng = new Rng(seed);
   }
 
   var name: string = "";
@@ -188,9 +187,9 @@ const translators: Array<(rng: Rng) => string> = [
 export function makeName2(seed?: number){
   var rng: Rng;
   if(seed === undefined){
-    rng = new Rng(seed);
-  }else{
     rng = engine.worldGenRng;
+  }else{
+    rng = new Rng(seed);
   }
 
   const genArr: Array<number> = Array(4);
@@ -218,4 +217,15 @@ export function makeName2(seed?: number){
   });
 
   return name;
+}
+
+export function makeName(seed?: number){
+  var rng: Rng;
+  if(seed === undefined){
+    rng = engine.worldGenRng;
+  }else{
+    rng = new Rng(seed);
+  }
+
+  return rng.coinflip() ? makeName1(seed) : makeName2(seed);
 }

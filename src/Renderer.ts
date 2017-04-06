@@ -5,15 +5,14 @@ import {UIMapPart} from "./UIState";
 import Entity from "./ecs/Entity";
 
 const atlasPath = "images/atlas.json";
-const tileSize = 32;
-const screenWidth = tileSize * 20;
-const screenHeight = tileSize * 15;
+const unseeAlpha = 0.5;
 
 export default class Renderer{
   private atlasLoader: PIXI.loaders.Loader;
   private textures: PIXI.loaders.ITextureDictionary;
   private stage: PIXI.Container;
-  private pixiRenderer: PIXI.WebGLRenderer | PIXI.CanvasRenderer;
+  private layers: Array<PIXI.Container> = [];
+  private pixiRenderer: PIXI.WebGLRenderer;
   private spriteCache: Map<Entity, PIXI.Sprite>;
 
   constructor(){
@@ -21,7 +20,7 @@ export default class Renderer{
       this.textures = this.atlasLoader.resources[atlasPath].textures;
     });
     this.stage = new PIXI.Container();
-    this.pixiRenderer = PIXI.autoDetectRenderer(screenWidth, screenHeight, {clearBeforeRender: false});
+    this.pixiRenderer = new PIXI.WebGLRenderer(SCREEN_WIDTH, SCREEN_HEIGHT, {clearBeforeRender: false});
     this.pixiRenderer.preserveDrawingBuffer = true;
     this.spriteCache = new Map();
   }
@@ -39,31 +38,51 @@ export default class Renderer{
   public render(state: StepReturn): void{
     const mapData = state.ui && <UIMapPart>state.ui.map;
     if(mapData){
-      mapData.activeEntities.sort((a, b) => {
-        const aData = mapData.entityData[a];
-        const bData = mapData.entityData[b];
-        return aData.layer - bData.layer;
-      }).forEach(entity => {
+      mapData.activeEntities.forEach(entity => {
         const entityRenderData = mapData.entityData[entity];
         if(entityRenderData){
           var sprite: PIXI.Sprite;
           if(!this.spriteCache.has(entity)){
+            if(entityRenderData.spriteId === undefined){
+              throw entity;
+            }
             sprite = this.getSprite(entityRenderData.spriteId);
+            if(TILE_SCALE !== 1.0) sprite.scale.set(TILE_SCALE, TILE_SCALE);
             this.spriteCache.set(entity, sprite);
-            this.stage.addChild(sprite);
+
+            var layer = this.layers[entityRenderData.layer];
+            if(!layer){
+              layer = new PIXI.Container();
+              layer["zIndex"] = entityRenderData.layer;
+              this.layers[entityRenderData.layer] = layer;
+              this.stage.addChild(layer);
+
+              this.stage.children.sort((a, b) => a["zIndex"] - b["zIndex"])
+            }
+            layer.addChild(sprite);
           }else{
             sprite = this.spriteCache.get(entity);
           }
 
-          sprite.x = entityRenderData.x * tileSize;
-          sprite.y = entityRenderData.y * tileSize;
+          const screenX = entityRenderData.x * TILE_SIZE;
+          const screenY = entityRenderData.y * TILE_SIZE;
 
-          /*
-          const t = new PIXI.Text(`${entityRenderData.x},${entityRenderData.y},${entity}`,  {fontSize: 8});
-          t.x = sprite.x;
-          t.y = sprite.y;
-          this.stage.addChild(t);
-          */
+          if(sprite.x !== screenX){
+            sprite.x = screenX;
+          }
+          if(sprite.y !== screenY){
+            sprite.y = screenY;
+          }
+
+          if(entityRenderData.unsee && sprite.visible){
+            //XXX: setting alpha causes flickering ??
+            //sprite.alpha = unseeAlpha;
+            sprite.visible = false;
+          }else if(entityRenderData.alpha && sprite.alpha !== entityRenderData.alpha){
+            sprite.alpha = entityRenderData.alpha;
+          }else if(!sprite.visible){
+            sprite.visible = true;
+          }
         }
       });
     }

@@ -82,11 +82,15 @@ export class MersenneTwister{
  private mt = new Array(this.N); /* the array for the state vector */
  private mti = this.N + 1;  /* mti==N+1 means mt[N] is not initialized */
 
- constructor(seed?:number) {
+ constructor(seed?:number|Array<number>) {
     if (seed == undefined) {
       seed = new Date().getTime();
     }
-    this.init_genrand(seed);
+    if(typeof seed === "number"){
+      this.init_genrand(seed);
+    }else if(Array.isArray(seed)){
+      this.init_by_array(seed, seed.length);
+    }
   }
 
   /* initializes mt[N] with a seed */

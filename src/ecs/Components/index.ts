@@ -9,3 +9,5 @@ export {Tile} from "./Tile";
 export {TileReference} from "./TileReference";
 export {Vision} from "./Vision";
 export {Wall} from "./Wall"
+export {Flicker} from "./Flicker";
+export {Energy} from "./Energy";

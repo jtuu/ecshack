@@ -1,15 +1,18 @@
 import {WorkerWrapper} from "./WorkerWrapper";
 import Renderer from "./Renderer";
 import {EngineWorkerMessageTopic} from "./Enum";
+import {StepReturn} from "./Engine";
 
 export default class Game{
   private engine: WorkerWrapper;
   private renderer: Renderer;
   private engineReady: Promise<any>;
-  private frameCount: number = 0;
+  private stepCount: number = 0;
+  private stateBuffer: Array<StepReturn> = [];
 
   constructor(){
     this.engine = new WorkerWrapper("./EngineWorker.js");
+    this.engine.post(EngineWorkerMessageTopic.ENGINE_INIT);
     this.engineReady = new Promise(resolve => {
       this.engine.once(EngineWorkerMessageTopic.ENGINE_READY, resolve);
     });
@@ -36,14 +39,20 @@ export default class Game{
     });
 
     this.engine.on(EngineWorkerMessageTopic.GAME_STATE, msg => {
-      this.frameCount++;
-      requestAnimationFrame(() => {
-        this.renderer.render(msg.payload);
-        this.engine.post(EngineWorkerMessageTopic.GAME_STATE_REQUEST);
-      });
+      this.engine.post(EngineWorkerMessageTopic.GAME_STATE_REQUEST);
+      this.stepCount++;
+      this.stateBuffer.push(msg.payload);
+      requestAnimationFrame(this.rAFCallback);
     });
 
     this.renderer.attach(document.body);
+  }
+
+  private rAFCallback = () => {
+    const state = this.stateBuffer.pop();
+    if(state){
+      this.renderer.render(state);
+    }
   }
 
   public start(): void{

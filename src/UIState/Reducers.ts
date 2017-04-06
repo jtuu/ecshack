@@ -4,6 +4,9 @@ import {UIStateActionType, SpriteId, ComponentType} from "../Enum";
 import {entityManager} from "../EngineWorker";
 import Entity from "../ecs/Entity";
 import TileMap from "../TileMap";
+import {getSpriteId, getPosition, getLayer, getAlpha} from "../ecs/EntityUtils";
+import {VisionComponent} from "../ecs/Components/Vision";
+import {Fov} from "../Fov";
 
 type Reducer<S> = <A extends redux.Action>(state: S, action: A, ...otherStates: Array<S>) => S;
 
@@ -30,6 +33,8 @@ export interface EntityRenderData{
     y: number;
     spriteId: SpriteId;
     layer: number;
+    unsee?: boolean;
+    alpha?: number;
   }
 }
 
@@ -80,28 +85,6 @@ function encodeCoordinates<T extends Coordinate>(entityData: T): string{
   return `${entityData.x},${entityData.y}`;
 }
 
-function getSpriteId(entity: Entity): SpriteId{
-  return entityManager.hasComponent(entity, ComponentType.Renderable) ?
-    entityManager.getComponent(entity, ComponentType.Renderable).state.spriteId :
-    SpriteId.VOID;
-}
-
-function getCoordinates(entity: Entity): Coordinate{
-  if(entityManager.hasComponent(entity, ComponentType.TileReference)){
-    return entityManager.getComponent(entityManager.getComponent(entity, ComponentType.TileReference).state.tile, ComponentType.ConstantPosition).state;
-  }
-  if(entityManager.hasComponent(entity, ComponentType.ConstantPosition)){
-    return entityManager.getComponent(entity, ComponentType.ConstantPosition).state;
-  }
-  return {x: 0, y: 0};
-}
-
-function getLayer(entity: Entity): number{
-  return entityManager.hasComponent(entity, ComponentType.Renderable) ?
-    entityManager.getComponent(entity, ComponentType.Renderable).state.layer :
-    0;
-}
-
 function buildNewState(tileMap: TileMap): UIMapPart{
   const newState = {
     activeEntities: [],
@@ -119,7 +102,8 @@ function buildNewState(tileMap: TileMap): UIMapPart{
         newState.entityData[entity] = {
           x, y,
           spriteId: spriteId,
-          layer: getLayer(entity)
+          layer: getLayer(entity),
+          alpha: getAlpha(entity)
         };
       }
     });
@@ -130,7 +114,8 @@ function buildNewState(tileMap: TileMap): UIMapPart{
       newState.entityData[tile] = {
         x, y,
         spriteId: spriteId,
-        layer: getLayer(tile)
+        layer: getLayer(tile),
+        alpha: getAlpha(tile)
       };
     }
   }
@@ -138,51 +123,103 @@ function buildNewState(tileMap: TileMap): UIMapPart{
   return newState;
 }
 
+const visionEntities = new Set<Entity>();
+var isVisionSubscribed = false;
+
 const mapChangeReducer = createReducer(initialStates.map.mapChanges, {
   [UIStateActionType.SET_STATE]: function(previousState: UIMapPart, action: actions.SetStateAction, fullMap: UIMapPart): UIMapPart{
-    return buildNewState(action.payload.newState);
+    if(!isVisionSubscribed){
+      entityManager.subscribeToComponents(visionEntities, [ComponentType.Vision]);
+      isVisionSubscribed = true;
+    }
+
+    const visionComponents = Array.from(visionEntities).map(entity => <VisionComponent>entityManager.getComponent(entity, ComponentType.Vision)).filter(vision => vision.state.shouldRender);
+    const isSeen = (x: number, y: number) => visionComponents.some(vision => vision.state.fov.center && vision.state.fov.canSee(vision.state.fov.globalToLocal({x, y})));
+    const newState = buildNewState(action.payload.newState);
+
+    newState.activeEntities = newState.activeEntities.filter(id => {
+      const entity = newState.entityData[id];
+      if(isSeen(entity.x, entity.y)){
+        return true;
+      }
+      delete newState.entityData[id];
+      return false;
+    });
+
+    return newState;
   },
   [UIStateActionType.MOVE_ENTITY]: function(previousState: UIMapPart, action: actions.MoveEntityAction, fullMap: UIMapPart): UIMapPart{
-    //TODO: add fov checks
     const entityId = action.payload.entity;
     const entity = fullMap.entityData[entityId];
     const oldTile = grid[encodeCoordinates(entity)];
     const newEntityData = Object.assign({}, previousState.entityData);
-    const newActiveEntities = previousState.activeEntities.concat();
+    const newActiveEntities = new Set(previousState.activeEntities);
+    const visionComponents = Array.from(visionEntities).map(entity => <VisionComponent>entityManager.getComponent(entity, ComponentType.Vision)).filter(vision => vision.state.shouldRender);
+    const isSeen = (x: number, y: number) => visionComponents.some(vision => vision.state.fov.center && vision.state.fov.canSee(vision.state.fov.globalToLocal({x, y})));
+    const vision = <VisionComponent>entityManager.getComponent(entityId, ComponentType.Vision);
+
+    const fovDiff = Fov.diff(new Fov(vision.state.radius, {x: entity.x, y: entity.y}), new Fov(vision.state.radius, action.payload.newPos));
+    fovDiff.b.forEach(tile => {
+      grid[encodeCoordinates(getPosition(tile))].forEach(e => {
+        newEntityData[e] = Object.assign({}, fullMap.entityData[e], {unsee: false});
+        newActiveEntities.add(e);
+      });
+      newEntityData[tile] = Object.assign({}, fullMap.entityData[tile], {unsee: false});
+      newActiveEntities.add(tile);
+    });
+    fovDiff.a.forEach(tile => {
+      const pos = getPosition(tile);
+      if(pos.x === action.payload.newPos.x && pos.y === action.payload.newPos.y) return;
+
+      grid[encodeCoordinates(pos)].forEach(e => {
+        newEntityData[e] = Object.assign({}, fullMap.entityData[e], {unsee: true});
+        newActiveEntities.add(e);
+      });
+      newEntityData[tile] = Object.assign({}, fullMap.entityData[tile], {unsee: true});
+      newActiveEntities.add(tile);
+    });
 
     oldTile.forEach(e => {
       if(e === entityId) return;
-      newEntityData[e] = Object.assign({}, fullMap.entityData[e]);
-      newActiveEntities.push(e);
+      if(isSeen(entity.x, entity.y)){
+        newEntityData[e] = Object.assign({}, fullMap.entityData[e], {unsee: false});
+        newActiveEntities.add(e);
+      }
     });
-    const spriteId = getSpriteId(action.payload.entity);
+    const spriteId = getSpriteId(entityId);
     if(spriteId !== SpriteId.VOID){
-      newActiveEntities.push(entityId);
+      newActiveEntities.add(entityId);
       newEntityData[entityId] = updateObject(fullMap.entityData[entityId], {
         x: action.payload.newPos.x,
         y: action.payload.newPos.y,
         spriteId: spriteId,
-        layer: getLayer(action.payload.entity)
+        layer: getLayer(entityId),
+        alpha: 1,
+        unsee: false
       });
     }
 
     return {
-      activeEntities: newActiveEntities,
+      activeEntities: Array.from(newActiveEntities),
       entityData: newEntityData
     }
   },
   [UIStateActionType.FORCE_UPDATE_ENTITY]: function(previousState: UIMapPart, action: actions.ForceUpdateEntityAction, fullMap: UIMapPart): UIMapPart{
     const newEntityData = Object.assign({}, previousState.entityData);
     const newActiveEntities = previousState.activeEntities.concat();
+    const visionComponents = Array.from(visionEntities).map(entity => <VisionComponent>entityManager.getComponent(entity, ComponentType.Vision)).filter(vision => vision.state.shouldRender);
+    const isSeen = (x: number, y: number) => visionComponents.some(vision => vision.state.fov.center && vision.state.fov.canSee(vision.state.fov.globalToLocal({x, y})));
+    const position = getPosition(action.payload.entity);
+
     const spriteId = getSpriteId(action.payload.entity);
-    if(spriteId !== SpriteId.VOID){
+    if(spriteId !== SpriteId.VOID && isSeen(position.x, position.y)){
       newActiveEntities.push(action.payload.entity);
-      const position = getCoordinates(action.payload.entity);
       newEntityData[action.payload.entity] = updateObject(fullMap.entityData[action.payload.entity], {
         spriteId: spriteId,
         x: position.x,
         y: position.y,
-        layer: getLayer(action.payload.entity)
+        layer: getLayer(action.payload.entity),
+        alpha: getAlpha(action.payload.entity)
       });
     }
     return {
@@ -202,7 +239,7 @@ const fullMapReducer = createReducer(initialStates.map.fullMap, {
     changeState.activeEntities.forEach(e => {
       if(e in changeState.entityData){
         const entity = changeState.entityData[e];
-        newEntityData[e] = Object.assign({}, entity);
+        newEntityData[e] = Object.assign({}, entity, {unsee: false});
         if(e === entityId){
           const oldTile = grid[encodeCoordinates(previousState.entityData[e])];
           oldTile.delete(entityId);

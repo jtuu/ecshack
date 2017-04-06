@@ -22,7 +22,8 @@ export interface StepReturn{
 }
 
 const defaultEngineConfig: EngineConfig = {
-
+  worldGenSeed: 123908908,
+  miscSeed: 309459
 }
 
 export class Engine{
@@ -34,20 +35,23 @@ export class Engine{
   public miscRng: Rng;
   private systemComponentSubscriptions: Map<System, Set<Entity>> = new Map();
 
-  constructor(config: EngineConfig = defaultEngineConfig){
+  constructor(userConfig: EngineConfig = {}){
+    const config = Object.assign({}, defaultEngineConfig, userConfig);
+
     this.worldGenRng = new Rng(config.worldGenSeed);
     this.miscRng = new Rng(config.miscSeed);
 
     this.entityManager = new EntityManager();
 
     this.concreteSystems = [
-      new Systems.RenderSystem(),
-      new Systems.KeyboardControlSystem(),
       new Systems.TileSystem(),
-      new Systems.MovementSystem()
+      new Systems.KeyboardControlSystem(),
+      new Systems.MovementSystem(),
+      new Systems.VisionSystem(),
+      new Systems.RenderSystem()
     ];
     this.cosmeticSystems = [
-
+      //new Systems.FlickerSystem()
     ];
     this.concreteSystems.concat(this.cosmeticSystems).forEach(system => {
       const subscriber = new Set();
@@ -62,7 +66,16 @@ export class Engine{
     return new SceneManager();
   }
 
-  private runSystems(){
+  public warmUpSystems(){
+    for(const system of this.concreteSystems){
+      system.update(this.systemComponentSubscriptions.get(system));
+    }
+    for(const system of this.cosmeticSystems){
+      system.update(this.systemComponentSubscriptions.get(system));
+    }
+  }
+
+  public runSystems(){
     var isBlockingAnimation = false;
     for(const system of this.cosmeticSystems){
       isBlockingAnimation = system.update(this.systemComponentSubscriptions.get(system));

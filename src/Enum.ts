@@ -9,7 +9,9 @@ export enum ComponentType{
   Movement,
   Tile,
   Floor,
-  Wall
+  Wall,
+  Flicker,
+  Energy
 }
 
 export enum KeyCode {
@@ -162,7 +164,8 @@ export enum SpriteId{
   FLOOR_DEFAULT,
   WALL_STONE,
   PLAYER,
-  CAPY
+  CAPY,
+  FLICKER
 }
 
 export enum EngineWorkerMessageTopic{
@@ -172,6 +175,7 @@ export enum EngineWorkerMessageTopic{
   KEYDOWN,
   KEYUP,
   ITEM_NAME_TEST,
+  ENGINE_INIT,
   ENGINE_READY
 }
 
@@ -180,4 +184,14 @@ export enum UIStateActionType{
   MOVE_ENTITY,
   STEP_END,
   FORCE_UPDATE_ENTITY
+}
+
+export const enum FovTileState{
+  NOT_VISIBLE,
+  VISIBLE
+}
+
+export const enum TileOpacity{
+  CLEAR,
+  OPAQUE
 }

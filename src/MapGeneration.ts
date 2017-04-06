@@ -1,9 +1,11 @@
 import TileMap from "./TileMap";
 import {ComponentType} from "./Enum";
+import AssemblageData from "./ecs/AssemblageData/AssemblageData"
 import TileAssemblageData from "./ecs/AssemblageData/Tile";
-import {entityManager} from "./EngineWorker";
+import {engine, entityManager} from "./EngineWorker";
 import {MapFiles} from "./maps";
 import {ComponentState} from "./ecs/Components/Component";
+import {SpriteId} from "./Enum";
 
 export namespace MapGen{
 
@@ -24,10 +26,21 @@ export namespace MapGen{
 
   const newlinePattern = /\r\n|\n/g;
 
-  const MapFileCharMap = new Map<string, [ComponentType, ComponentState]>([
-    ["#", [ComponentType.Wall, {}]],
-    [".", [ComponentType.Floor, {}]],
-    ["@", [ComponentType.Tile, {isEntry: true}]]
+  const MapFileCharMap = new Map<string, [AssemblageData, boolean]>([
+    ["#", [{
+      [ComponentType.Wall]: {}
+    }, false]],
+    [".", [{
+      [ComponentType.Floor]: {}
+    }, false]],
+    ["@", [{
+      [ComponentType.Tile]: {isEntry: true}
+    }, false]],
+    ["*", [{
+      [ComponentType.Flicker]: {},
+      [ComponentType.Renderable]: {spriteId: SpriteId.FLICKER, layer: 1}
+    }, true]]
+
   ]);
   const VOID_TILE = " ";
 
@@ -39,6 +52,8 @@ export namespace MapGen{
     const lines = mapDescription.split(newlinePattern);
     const height = lines.length;
     const width = lines[0].length;
+
+    mapData.tileMap = new TileMap(width, height);
 
     //remove trailing newline
     if(!lines[lines.length - 1]){
@@ -61,12 +76,22 @@ export namespace MapGen{
         const tile = entityManager.createEntityFromAssemblage(TileAssemblageData);
         entityManager.addComponent(tile, ComponentType.Floor);
         entityManager.addComponent(tile, ComponentType.Renderable);
+
         const position = entityManager.getComponent(tile, ComponentType.ConstantPosition).state;
         position.x = x;
         position.y = y;
-        const componentCreationData = MapFileCharMap.get(char);
-        entityManager.addComponent(tile, componentCreationData[0], componentCreationData[1]);
         tileMap.grid.set(x, y, tile);
+
+        const [assemblage, isTileContent] = MapFileCharMap.get(char);
+        if(isTileContent){
+          const entity = entityManager.createEntityFromAssemblage(assemblage);
+          mapData.tileMap.add(x, y, entity);
+        }else{
+          Reflect.ownKeys(assemblage).forEach(type => {
+            entityManager.addComponent(tile, type, assemblage[type]);
+          });
+        }
+
         if(char === "@"){
           mapData.entryPos = {x, y}
         }
@@ -77,7 +102,9 @@ export namespace MapGen{
   }
 
   function parseMapFile(mapFile: string): MapData{
-    const mapData: Partial<MapData> = {};
+    const mapData: Partial<MapData> = {
+      name: "test"
+    };
     const lines = mapFile.split(newlinePattern);
 
     const nameDef = lines.find(line => /^NAME .+/.test(line));
@@ -102,6 +129,28 @@ export namespace MapGen{
   export namespace generate{
     export function testFloor(): MapData{
       return parseMapFile(MapFiles.test);
+    }
+
+    export function random(): MapData{
+      const mapData: Partial<MapData> = {
+        name: "random",
+        tileMap: new TileMap(80, 24)
+      };
+
+      var entryPlaced = false;
+      for(const [tile, idx, x, y] of mapData.tileMap.grid){
+        entityManager.addComponent(tile, ComponentType.Floor);
+        entityManager.addComponent(tile, ComponentType.Renderable);
+
+        if(!engine.worldGenRng.random2(100)){
+          entityManager.addComponent(tile, ComponentType.Wall);
+        }else if(!entryPlaced && !engine.worldGenRng.random2(6)){
+          mapData.entryPos = {x, y};
+          entryPlaced = true;
+        }
+      }
+
+      return makeMapData(mapData);
     }
   }
 

@@ -1,16 +1,34 @@
 import TileMap from "./TileMap";
 import Entity from "./ecs/Entity";
-import {entityManager} from "./EngineWorker";
+import {engine, entityManager} from "./EngineWorker";
 import {ComponentType} from "./Enum";
 import {moveEntity, setState, dispatch} from "./UIState";
 import {MapGen} from "./MapGeneration";
 import PlayerAssemblageData from "./ecs/AssemblageData/Player";
+import {Fov} from "./Fov";
 
 export default class SceneManager{
   public map: TileMap;
 
   constructor(){
     this.map = new TileMap();
+  }
+
+  public invalidateFov(center: Coordinate): void{
+    const fov = new Fov();
+    fov.center = center;
+
+    for(const [tile, visibility, x, y] of fov){
+      const tileContents = this.map.getContents(x, y);
+      if(tileContents){
+        tileContents.forEach(entity => {
+          if(entityManager.hasComponent(entity, ComponentType.Vision)){
+            const vision = entityManager.getComponent(entity, ComponentType.Vision).state;
+            vision.fov.invalidate();
+          }
+        });
+      }
+    }
   }
 
   public moveEntity(entity: Entity, dx: number, dy: number): void{
@@ -27,6 +45,8 @@ export default class SceneManager{
     const newTileContents = entityManager.getComponent(newTile, ComponentType.Storage).state.contents;
     newTileContents.add(entity);
 
+    this.invalidateFov(newPos);
+
     dispatch(moveEntity(entity, newPos));
   }
 
@@ -36,6 +56,7 @@ export default class SceneManager{
     testFloor.tileMap.add(testFloor.entryPos.x, testFloor.entryPos.y, player);
     this.map.clearAll();
     this.map.merge(testFloor.tileMap);
+    engine.warmUpSystems();
     dispatch(setState(this.map));
   }
 }
