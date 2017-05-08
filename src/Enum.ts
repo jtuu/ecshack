@@ -11,7 +11,10 @@ export enum ComponentType{
   Floor,
   Wall,
   Flicker,
-  Energy
+  Energy,
+  SimpleWalker,
+  AIControlled,
+  Solid
 }
 
 export enum KeyCode {

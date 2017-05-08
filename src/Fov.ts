@@ -1,6 +1,6 @@
-import Grid from "./Grid";
+import {Grid} from "./Grid";
 import {FovTileState, TileOpacity} from "./Enum";
-import Entity from "./ecs/Entity";
+import {Entity} from "./ecs/Entity";
 import {engine} from "./EngineWorker";
 import {isEntity} from "./ecs/EntityUtils";
 import {GeometryUtils} from "./Utils";
@@ -33,7 +33,7 @@ export class Fov{
     if(center){
       this.center = center;
       if(Fov.cache.enabled){
-        const cached = Fov.cache.grid.getByXy(center.x, center.y);
+        const cached = Fov.cache.grid.get(center.x, center.y);
         cached.radius = radius;
         return cached;
       }
@@ -66,7 +66,7 @@ export class Fov{
         Fov.cache.grid.delete(old.center.x, old.center.y);
       }
 
-      if(!Fov.cache.grid.getByXy(this.center.x, this.center.y)){
+      if(!Fov.cache.grid.get(this.center.x, this.center.y)){
         const clone = this.clone();
         Fov.cache.grid.set(this.center.x, this.center.y, clone);
         Fov.cache.age.push(clone);
@@ -178,7 +178,7 @@ export class Fov{
 
         if(visible){
           const l = this.globalToLocal(pos);
-          this.tileRefMap.set(l.x, l.y, engine.scene.map.grid.getByXy(pos.x, pos.y));
+          this.tileRefMap.set(l.x, l.y, engine.scene.map.grid.get(pos.x, pos.y));
           this.visibilityMap.set(l.x, l.y, FovTileState.VISIBLE);
           done = false;
 
@@ -264,7 +264,7 @@ export class Fov{
 
         if(visible){
           const l = this.globalToLocal(pos);
-          this.tileRefMap.set(l.x, l.y, engine.scene.map.grid.getByXy(pos.x, pos.y));
+          this.tileRefMap.set(l.x, l.y, engine.scene.map.grid.get(pos.x, pos.y));
           this.visibilityMap.set(l.x, l.y, FovTileState.VISIBLE);
           done = false;
 
@@ -311,27 +311,13 @@ export class Fov{
       this.update();
     }
 
-    const c = this.center;
+    const loc = this.globalToLocal(this.center);
 
-    yield [this.tileRefMap.getByXy(c.x, c.y), this.visibilityMap.getByXy(c.x, c.y), c.x, c.y];
+    yield [this.tileRefMap.get(loc.x, loc.y), this.visibilityMap.get(loc.x, loc.y), loc.x, loc.y];
 
-    for(let r = 1; r <= this.radius; r++){
-      for(let i = -r; i < r; i++){
-        const xN = c.x + i, yN = c.y - r;
-        if(GeometryUtils.isInWorld({x: xN, y: yN}))
-          yield [this.tileRefMap.getByXy(xN, yN), this.visibilityMap.getByXy(xN, yN), xN, yN];
-
-        const xE = c.x + r, yE = c.y + i;
-        if(GeometryUtils.isInWorld({x: xE, y: yE}))
-          yield [this.tileRefMap.getByXy(xE, yE), this.visibilityMap.getByXy(xE, yE), xE, yE];
-
-        const xS = c.x - i, yS = c.y + r;
-        if(GeometryUtils.isInWorld({x: xS, y: yS}))
-          yield [this.tileRefMap.getByXy(xS, yS), this.visibilityMap.getByXy(xS, yS), xS, yS];
-
-        const xW = c.x - r, yW = c.y - i;
-        if(GeometryUtils.isInWorld({x: xW, y: yW}))
-          yield [this.tileRefMap.getByXy(xW, yW), this.visibilityMap.getByXy(xW, yW), xW, yW];
+    for(const [tile, x, y] of this.visibilityMap.neighbors(loc.x, loc.y, this.radius)){
+      if(GeometryUtils.isInWorld({x, y})){
+        yield [tile, this.visibilityMap.get(x, y), x, y];
       }
     }
   }
@@ -350,7 +336,7 @@ export class Fov{
       this.update();
     }
 
-    return this.visibilityMap.getByXy(x, y) === FovTileState.VISIBLE;
+    return this.visibilityMap.get(x, y) === FovTileState.VISIBLE;
   }
 
   public static diff(a: Fov, b: Fov): FovDiffResult{
@@ -359,16 +345,16 @@ export class Fov{
     if(a.needsUpdate) a.update();
     if(b.needsUpdate) b.update();
 
-    const actile = a.tileRefMap.getByXy(a.center.x, a.center.y);
-    const bctile = b.tileRefMap.getByXy(b.center.x, b.center.y);
+    const actile = a.tileRefMap.get(a.center.x, a.center.y);
+    const bctile = b.tileRefMap.get(b.center.x, b.center.y);
 
-    for(const [tile, idx, x, y] of a.tileRefMap){
+    for(const [tile, x, y] of a.tileRefMap){
       if(isEntity(tile) && !b.tileRefMap.has(tile)){
         result.a.push(tile);
       }
     }
 
-    for(const [tile, idx, x, y] of b.tileRefMap){
+    for(const [tile, x, y] of b.tileRefMap){
       if(isEntity(tile) && !a.tileRefMap.has(tile)){
         result.b.push(tile);
       }

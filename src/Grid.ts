@@ -1,6 +1,6 @@
-type GridIteratorReturn<T> = [T, number, number, number];
+export type GridIteratorReturn<T> = [T, number, number];
 
-export default class Grid<T> implements Iterable<GridIteratorReturn<T>>{
+export class Grid<T> implements Iterable<GridIteratorReturn<T>>{
   protected elements: Array<T>;
   public readonly width: number;
   public readonly height: number;
@@ -21,12 +21,8 @@ export default class Grid<T> implements Iterable<GridIteratorReturn<T>>{
     }
   }
 
-  public getByXy(x: number, y: number): T{
+  public get(x: number, y: number): T{
     return this.elements[y * this.width + x];
-  }
-
-  public getByIndex(index: number): T{
-    return this.elements[index];
   }
 
   public set(x: number, y: number, value: T): void{
@@ -41,7 +37,7 @@ export default class Grid<T> implements Iterable<GridIteratorReturn<T>>{
     const {width, height, elements} = this;
     for(let y = 0; y < height; y++){
       const i = y * width + column;
-      yield [elements[i], i, column, y];
+      yield [elements[i], column, y];
     }
   }
 
@@ -55,7 +51,7 @@ export default class Grid<T> implements Iterable<GridIteratorReturn<T>>{
     const {width, height, elements} = this;
     for(let x = 0; x < width; x++){
       const i = row * width + x;
-      yield [elements[i], i, x, row];
+      yield [elements[i], x, row];
     }
   }
 
@@ -65,11 +61,45 @@ export default class Grid<T> implements Iterable<GridIteratorReturn<T>>{
     }
   }
 
+  public *neighbors(x: number, y: number, radius: number = 1, cardinalOnly: boolean = false): IterableIterator<GridIteratorReturn<T>>{
+    if(cardinalOnly){
+      for(let r = 1; r <= radius; r++){
+        const xN = x, yN = y - r;
+        yield [this.get(xN, yN), xN, yN];
+
+        const xE = x + r, yE = y;
+        yield [this.get(xE, yE), xE, yE];
+
+        const xS = x, yS = y + r;
+        yield [this.get(xS, yS), xS, yS];
+
+        const xW = x - r, yW = y;
+        yield [this.get(xW, yW), xW, yW];
+      }
+    }else{
+      for(let r = 1; r <= radius; r++){
+        for(let i = -r; i < r; i++){
+          const xN = x + i, yN = y - r;
+          yield [this.get(xN, yN), xN, yN];
+
+          const xE = x + r, yE = y + i;
+          yield [this.get(xE, yE), xE, yE];
+
+          const xS = x - i, yS = y + r;
+          yield [this.get(xS, yS), xS, yS];
+  
+          const xW = x - r, yW = y - i;
+          yield [this.get(xW, yW), xW, yW];
+        }
+      }
+    }
+  }
+
   public *[Symbol.iterator](): IterableIterator<GridIteratorReturn<T>>{
     const {width, height, elements} = this;
     for(let y = 0, i = 0; y < height; y++){
       for(let x = 0; x < width; x++, i++){
-        yield [elements[i], i, x, y];
+        yield [elements[i], x, y];
       }
     }
   }

@@ -1,11 +1,11 @@
-import EntityManager from "./ecs/EntityManager";
-import System from  "./ecs/Systems/System";
+import {EntityManager} from "./ecs/EntityManager";
+import {System} from  "./ecs/Systems/System";
 import * as Systems from "./ecs/Systems";
-import SceneManager from "./SceneManager";
-import Rng from "./Random";
-import Entity from "./ecs/Entity";
+import {SceneManager} from "./SceneManager";
+import {Rng} from "./Random";
+import {Entity} from "./ecs/Entity";
 import {store as UI, UIState, endStep, UIMapPart, dispatch, EntityRenderData} from "./UIState";
-import {Memoize} from "./Decorators";
+import {Memoize, Benchmark} from "./Decorators";
 
 export interface EngineConfig{
   worldGenSeed?: number;
@@ -44,10 +44,11 @@ export class Engine{
     this.entityManager = new EntityManager();
 
     this.concreteSystems = [
-      new Systems.TileSystem(),
       new Systems.KeyboardControlSystem(),
+      new Systems.SimpleWalkerSystem(),
       new Systems.MovementSystem(),
       new Systems.VisionSystem(),
+      new Systems.EnergySystem(),
       new Systems.RenderSystem()
     ];
     this.cosmeticSystems = [
@@ -79,11 +80,13 @@ export class Engine{
     var isBlockingAnimation = false;
     for(const system of this.cosmeticSystems){
       isBlockingAnimation = system.update(this.systemComponentSubscriptions.get(system));
+      system.afterUpdate();
     }
 
     if(!isBlockingAnimation){
       for(const system of this.concreteSystems){
         const shouldStall = system.update(this.systemComponentSubscriptions.get(system));
+        system.afterUpdate();
         if(shouldStall){
           break;
         }

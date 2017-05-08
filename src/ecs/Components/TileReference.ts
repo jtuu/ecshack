@@ -1,6 +1,6 @@
 import {Component, ComponentState} from "./Component";
 import {ComponentType} from "../../Enum";
-import Entity from "../Entity"
+import {Entity} from "../Entity"
 
 export interface TileReferenceState extends ComponentState{
   tile: Entity;

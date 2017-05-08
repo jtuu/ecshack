@@ -1,12 +1,11 @@
-import System from "./System";
+import {System} from "./System";
 import {ComponentType, FovTileState} from "../../Enum";
-import Entity from "../Entity";
+import {Entity} from "../Entity";
 import {entityManager} from "../../EngineWorker";
 import {getPosition} from "../EntityUtils";
 import {VisionState} from "../Components/Vision";
 
-
-export class VisionSystem implements System{
+export class VisionSystem extends System{
   public readonly subscribedComponents: Array<ComponentType> = [ComponentType.Vision];
 
   public update(entities: Iterable<Entity>){

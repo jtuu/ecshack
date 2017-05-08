@@ -1,8 +1,8 @@
 import {Component, ComponentState} from "./Component";
 import {ComponentType} from "../../Enum";
+import {Controller} from ".";
 
-export interface KeyboardControlledState extends ComponentState{
-  needsInput: boolean;
+export interface KeyboardControlledState extends Controller{
 }
 
 export interface KeyboardControlledComponent extends Component<KeyboardControlledState>{

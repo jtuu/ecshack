@@ -15,9 +15,10 @@
         "skipLibCheck": true,
         "experimentalDecorators": true,
         "lib": [
-            "ES2017",
-            "WebWorker",
-            "DOM"
+          "ES6",
+          "ES2017",
+          "WebWorker",
+          "DOM"
         ],
         "types": [],
         "outDir": "build/trash"

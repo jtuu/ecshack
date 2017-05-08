@@ -23,6 +23,7 @@ let keyboardStatus: KeyboardStatus = {};
 let charPressed: CharStatus = {};
 let anyKeyDown = false;
 let anyKeyPressed = false;
+let anyKeyReleased = false;
 
 export function isAnyKeyDown(): boolean{
   return anyKeyDown;
@@ -30,6 +31,10 @@ export function isAnyKeyDown(): boolean{
 
 export function wasAnyKeyPressed(): boolean{
   return anyKeyPressed;
+}
+
+export function wasAnyKeyReleased(): boolean{
+  return anyKeyReleased;
 }
 
 export function isKeyDown(key: KeyCode): boolean{
@@ -51,6 +56,7 @@ export function wasKeyReleased(key: KeyCode): boolean{
 export function resetKeyboardInput(): void{
   anyKeyDown = false;
   anyKeyPressed = false;
+  anyKeyReleased = false;
 
   for(const keyCode of Object.keys(keyboardStatus)){
     keyboardStatus[keyCode].pressed = false;
@@ -78,6 +84,7 @@ export function onKeydown(event: KeyboardEvent){
 }
 
 export function onKeyup(event: KeyboardEvent) {
+  anyKeyReleased = true;
   if (!keyboardStatus[event.keyCode]) {
     keyboardStatus[event.keyCode] = {pressed: false, released: true, status: false};
   } else {

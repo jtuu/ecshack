@@ -18,6 +18,27 @@ export namespace StringUtils{
   }
 }
 
+export namespace NumberUtils{
+
+  export function encodePair(x: number, y: number): number{
+    if(x === Math.max(x, y)){
+      return x ** 2 + x + y;
+    }else{
+      return y ** 2 + x;
+    }
+  }
+
+  export function decodePair(z: number): [number, number]{
+    const a = Math.sqrt(z) | 0;
+    const b = z - a ** 2;
+    if(b < a){
+      return [b, a];
+    }else{
+      return [a, b - a];
+    }
+  }
+}
+
 export namespace GeometryUtils{
 
   export function pointIntersect(rect: Rectangle, coord: Coordinate): boolean{
@@ -49,5 +70,14 @@ export namespace GeometryUtils{
     if(coord.y < 0) coord.y = 0;
     if(coord.y > WORLD_MAX_Y) coord.y = WORLD_MAX_Y;
     return coord;
+  }
+
+  export function encodeCoordinate(coord: Coordinate): number{
+    return NumberUtils.encodePair(coord.x, coord.y);
+  }
+
+  export function decodeCoordinate(code: number): Coordinate{
+    const [x, y] = NumberUtils.decodePair(code);
+    return {x, y};
   }
 }

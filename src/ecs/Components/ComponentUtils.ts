@@ -43,10 +43,10 @@ export class UnknownComponentError extends Error{
 }
 
 export function getDefaultComponent<C extends Component<any>>(ident: ComponentIdentity<any>): C{
-  if(isComponent(ident)){
-    return componentMap[ident.enum];
-  }else if(isComponentTypeEnum(ident)){
+  if(isComponentTypeEnum(ident)){
     return componentMap[ident];
+  }else if(isComponent(ident)){
+    return componentMap[ident.enum];
   }else if(isComponentName(ident)){
     return componentMap[ident];
   }

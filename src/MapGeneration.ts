@@ -1,7 +1,7 @@
-import TileMap from "./TileMap";
+import {TileMap} from "./TileMap";
 import {ComponentType} from "./Enum";
-import AssemblageData from "./ecs/AssemblageData/AssemblageData"
-import TileAssemblageData from "./ecs/AssemblageData/Tile";
+import {AssemblageData} from "./ecs/AssemblageData/AssemblageData"
+import {TileAssemblageData, DummyCreatureAssemblageData} from "./ecs/AssemblageData";
 import {engine, entityManager} from "./EngineWorker";
 import {MapFiles} from "./maps";
 import {ComponentState} from "./ecs/Components/Component";
@@ -39,8 +39,8 @@ export namespace MapGen{
     ["*", [{
       [ComponentType.Flicker]: {},
       [ComponentType.Renderable]: {spriteId: SpriteId.FLICKER, layer: 1}
-    }, true]]
-
+    }, true]],
+    ["d", [DummyCreatureAssemblageData, true]]
   ]);
   const VOID_TILE = " ";
 
@@ -52,8 +52,6 @@ export namespace MapGen{
     const lines = mapDescription.split(newlinePattern);
     const height = lines.length;
     const width = lines[0].length;
-
-    mapData.tileMap = new TileMap(width, height);
 
     //remove trailing newline
     if(!lines[lines.length - 1]){
@@ -85,7 +83,7 @@ export namespace MapGen{
         const [assemblage, isTileContent] = MapFileCharMap.get(char);
         if(isTileContent){
           const entity = entityManager.createEntityFromAssemblage(assemblage);
-          mapData.tileMap.add(x, y, entity);
+          tileMap.add(x, y, entity);
         }else{
           Reflect.ownKeys(assemblage).forEach(type => {
             entityManager.addComponent(tile, type, assemblage[type]);
@@ -128,7 +126,8 @@ export namespace MapGen{
 
   export namespace generate{
     export function testFloor(): MapData{
-      return parseMapFile(MapFiles.test);
+      const map = parseMapFile(MapFiles.test);
+      return map;
     }
 
     export function random(): MapData{
@@ -138,7 +137,7 @@ export namespace MapGen{
       };
 
       var entryPlaced = false;
-      for(const [tile, idx, x, y] of mapData.tileMap.grid){
+      for(const [tile, x, y] of mapData.tileMap.grid){
         entityManager.addComponent(tile, ComponentType.Floor);
         entityManager.addComponent(tile, ComponentType.Renderable);
 

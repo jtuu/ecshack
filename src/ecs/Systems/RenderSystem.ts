@@ -1,6 +1,6 @@
-import System from "./System";
+import {System} from "./System";
 import {ComponentType, SpriteId} from "../../Enum";
-import Entity from "../Entity";
+import {Entity} from "../Entity";
 import {entityManager} from "../../EngineWorker";
 import {dispatch, updateEntity} from "../../UIState";
 
@@ -19,7 +19,7 @@ function pickSprite(entity: Entity): SpriteId{
   return sprite;
 }
 
-export class RenderSystem implements System{
+export class RenderSystem extends System{
   public readonly subscribedComponents: Array<ComponentType> = [ComponentType.Renderable];
 
   public update(entities: Iterable<Entity>): boolean{

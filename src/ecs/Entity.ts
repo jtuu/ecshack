@@ -1,4 +1,4 @@
-import EntityManager from "./EntityManager";
+import {EntityManager} from "./EntityManager";
 import {Component} from "./Components/Component";
 import {ComponentIdentity} from "./Components/ComponentUtils";
 
@@ -32,5 +32,4 @@ export default class Entity extends Number{
 }
 */
 
-type Entity = number;
-export default Entity;
+export type Entity = number;

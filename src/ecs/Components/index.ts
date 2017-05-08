@@ -11,3 +11,12 @@ export {Vision} from "./Vision";
 export {Wall} from "./Wall"
 export {Flicker} from "./Flicker";
 export {Energy} from "./Energy";
+export {SimpleWalker} from "./SimpleWalker";
+export {AIControlled} from "./AIControlled";
+export {Solid} from "./Solid";
+
+import {ComponentState} from "./Component";
+
+export interface Controller extends ComponentState{
+  needsInput: boolean;
+}

@@ -1,5 +1,5 @@
 import {engine} from "./EngineWorker";
-import Rng from "./Random";
+import {Rng} from "./Random";
 
 const maxIters = 150;
 const alphabetStart = "a".charCodeAt(0);

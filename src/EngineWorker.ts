@@ -5,7 +5,7 @@ import {WorkerWrapper} from "./WorkerWrapper";
 import {onKeypress, onKeydown, onKeyup} from "./KeyboardInput";
 import {EngineWorkerMessageTopic, KeyCode} from "./Enum";
 import {makeName} from "./ItemName";
-import EntityManager from "./ecs/EntityManager";
+import {EntityManager} from "./ecs/EntityManager";
 
 const host = new WorkerWrapper(self);
 

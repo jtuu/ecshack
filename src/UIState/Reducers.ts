@@ -2,11 +2,13 @@ import * as redux from "redux";
 import * as actions from "./Actions";
 import {UIStateActionType, SpriteId, ComponentType} from "../Enum";
 import {entityManager} from "../EngineWorker";
-import Entity from "../ecs/Entity";
-import TileMap from "../TileMap";
+import {Entity} from "../ecs/Entity";
+import {TileMap} from "../TileMap";
 import {getSpriteId, getPosition, getLayer, getAlpha} from "../ecs/EntityUtils";
 import {VisionComponent} from "../ecs/Components/Vision";
 import {Fov} from "../Fov";
+import {GeometryUtils} from "../Utils";
+const {encodeCoordinate} = GeometryUtils;
 
 type Reducer<S> = <A extends redux.Action>(state: S, action: A, ...otherStates: Array<S>) => S;
 
@@ -51,9 +53,9 @@ export interface MapReducerState{
 interface SimpleGrid{
   [key: string]: Set<number>;
 }
-const gridCoordinates: Set<string> = new Set();
+const gridCoordinates: Set<number> = new Set();
 const grid: SimpleGrid = new Proxy({}, {
-  get: (o, p: string) => {
+  get: (o, p: number) => {
     if(!o.hasOwnProperty(p)){
       o[p] = new Set();
       gridCoordinates.add(p);
@@ -81,10 +83,6 @@ const initialStates = {
   } as MapReducerState
 };
 
-function encodeCoordinates<T extends Coordinate>(entityData: T): string{
-  return `${entityData.x},${entityData.y}`;
-}
-
 function buildNewState(tileMap: TileMap): UIMapPart{
   const newState = {
     activeEntities: [],
@@ -92,13 +90,13 @@ function buildNewState(tileMap: TileMap): UIMapPart{
   } as UIMapPart;
   clearGrid();
 
-  for(const [tile, idx, x, y] of tileMap.grid){
+  for(const [tile, x, y] of tileMap.grid){
     const contents = tileMap.getContents(x, y);
     contents.forEach(entity => {
       const spriteId = getSpriteId(entity);
       if(spriteId !== SpriteId.VOID){
         newState.activeEntities.push(entity);
-        grid[encodeCoordinates({x,y})].add(entity);
+        grid[encodeCoordinate({x,y})].add(entity);
         newState.entityData[entity] = {
           x, y,
           spriteId: spriteId,
@@ -109,7 +107,7 @@ function buildNewState(tileMap: TileMap): UIMapPart{
     });
     const spriteId = getSpriteId(tile);
     if(spriteId !== SpriteId.VOID){
-      grid[encodeCoordinates({x,y})].add(tile);
+      grid[encodeCoordinate({x,y})].add(tile);
       newState.activeEntities.push(tile);
       newState.entityData[tile] = {
         x, y,
@@ -149,35 +147,38 @@ const mapChangeReducer = createReducer(initialStates.map.mapChanges, {
     return newState;
   },
   [UIStateActionType.MOVE_ENTITY]: function(previousState: UIMapPart, action: actions.MoveEntityAction, fullMap: UIMapPart): UIMapPart{
+    const c = fullMap.entityData[16984];
     const entityId = action.payload.entity;
     const entity = fullMap.entityData[entityId];
-    const oldTile = grid[encodeCoordinates(entity)];
+    const oldTile = grid[encodeCoordinate(entity)];
     const newEntityData = Object.assign({}, previousState.entityData);
     const newActiveEntities = new Set(previousState.activeEntities);
     const visionComponents = Array.from(visionEntities).map(entity => <VisionComponent>entityManager.getComponent(entity, ComponentType.Vision)).filter(vision => vision.state.shouldRender);
     const isSeen = (x: number, y: number) => visionComponents.some(vision => vision.state.fov.center && vision.state.fov.canSee(vision.state.fov.globalToLocal({x, y})));
     const vision = <VisionComponent>entityManager.getComponent(entityId, ComponentType.Vision);
 
-    const fovDiff = Fov.diff(new Fov(vision.state.radius, {x: entity.x, y: entity.y}), new Fov(vision.state.radius, action.payload.newPos));
-    fovDiff.b.forEach(tile => {
-      grid[encodeCoordinates(getPosition(tile))].forEach(e => {
-        newEntityData[e] = Object.assign({}, fullMap.entityData[e], {unsee: false});
-        newActiveEntities.add(e);
+    if(vision.state.shouldRender){
+      const fovDiff = Fov.diff(new Fov(vision.state.radius, {x: entity.x, y: entity.y}), new Fov(vision.state.radius, action.payload.newPos));
+      fovDiff.b.forEach(tile => {
+        grid[encodeCoordinate(getPosition(tile))].forEach(e => {
+          newEntityData[e] = Object.assign({}, fullMap.entityData[e], {unsee: false});
+          newActiveEntities.add(e);
+        });
+        newEntityData[tile] = Object.assign({}, fullMap.entityData[tile], {unsee: false});
+        newActiveEntities.add(tile);
       });
-      newEntityData[tile] = Object.assign({}, fullMap.entityData[tile], {unsee: false});
-      newActiveEntities.add(tile);
-    });
-    fovDiff.a.forEach(tile => {
-      const pos = getPosition(tile);
-      if(pos.x === action.payload.newPos.x && pos.y === action.payload.newPos.y) return;
+      fovDiff.a.forEach(tile => {
+        const pos = getPosition(tile);
+        if(pos.x === action.payload.newPos.x && pos.y === action.payload.newPos.y) return;
 
-      grid[encodeCoordinates(pos)].forEach(e => {
-        newEntityData[e] = Object.assign({}, fullMap.entityData[e], {unsee: true});
-        newActiveEntities.add(e);
+        grid[encodeCoordinate(pos)].forEach(e => {
+          newEntityData[e] = Object.assign({}, fullMap.entityData[e], {unsee: true});
+          newActiveEntities.add(e);
+        });
+        newEntityData[tile] = Object.assign({}, fullMap.entityData[tile], {unsee: true});
+        newActiveEntities.add(tile);
       });
-      newEntityData[tile] = Object.assign({}, fullMap.entityData[tile], {unsee: true});
-      newActiveEntities.add(tile);
-    });
+    }
 
     oldTile.forEach(e => {
       if(e === entityId) return;
@@ -187,7 +188,7 @@ const mapChangeReducer = createReducer(initialStates.map.mapChanges, {
       }
     });
     const spriteId = getSpriteId(entityId);
-    if(spriteId !== SpriteId.VOID){
+    if(spriteId !== SpriteId.VOID && isSeen(action.payload.newPos.x, action.payload.newPos.y)){
       newActiveEntities.add(entityId);
       newEntityData[entityId] = updateObject(fullMap.entityData[entityId], {
         x: action.payload.newPos.x,
@@ -236,17 +237,19 @@ const fullMapReducer = createReducer(initialStates.map.fullMap, {
   [UIStateActionType.MOVE_ENTITY]: function(previousState: UIMapPart, action: actions.MoveEntityAction, changeState: UIMapPart): UIMapPart{
     const entityId = action.payload.entity;
     const newEntityData = Object.assign({}, previousState.entityData);
-    changeState.activeEntities.forEach(e => {
+    [entityId].concat(changeState.activeEntities).forEach(e => {
       if(e in changeState.entityData){
         const entity = changeState.entityData[e];
         newEntityData[e] = Object.assign({}, entity, {unsee: false});
         if(e === entityId){
-          const oldTile = grid[encodeCoordinates(previousState.entityData[e])];
+          const oldTile = grid[encodeCoordinate(previousState.entityData[e])];
           oldTile.delete(entityId);
-          grid[encodeCoordinates(entity)].add(entityId);
+          grid[encodeCoordinate(entity)].add(entityId);
         }
       }
     });
+    newEntityData[entityId].x = action.payload.newPos.x;
+    newEntityData[entityId].y = action.payload.newPos.y;
     return {
       activeEntities: previousState.activeEntities,
       entityData: newEntityData
@@ -256,7 +259,7 @@ const fullMapReducer = createReducer(initialStates.map.fullMap, {
     const newEntityData = Object.assign({}, previousState.entityData);
     const entity = Object.assign({}, changeState.entityData[action.payload.entity]);
     newEntityData[action.payload.entity] = entity;
-    grid[encodeCoordinates(entity)].add(action.payload.entity);
+    grid[encodeCoordinate(entity)].add(action.payload.entity);
     return {
       activeEntities: previousState.activeEntities,
       entityData: newEntityData

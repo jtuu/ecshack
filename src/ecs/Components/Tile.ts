@@ -3,7 +3,6 @@ import {ComponentType} from "../../Enum";
 
 export interface TileState extends ComponentState{
   isSeen: boolean;
-  isBlocking: boolean;
   isEntry: boolean;
 }
 
@@ -16,7 +15,6 @@ export const Tile: TileComponent = {
   name: ComponentType[ComponentType.Tile],
   state: {
     isSeen: null,
-    isBlocking: null,
     isEntry: null
   }
 }

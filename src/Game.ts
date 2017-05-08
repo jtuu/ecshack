@@ -1,9 +1,10 @@
 import {WorkerWrapper} from "./WorkerWrapper";
-import Renderer from "./Renderer";
+import {Renderer} from "./Renderer";
 import {EngineWorkerMessageTopic} from "./Enum";
 import {StepReturn} from "./Engine";
+import {keyCodeCommandMap} from "./KeyConfig";
 
-export default class Game{
+export class Game{
   private engine: WorkerWrapper;
   private renderer: Renderer;
   private engineReady: Promise<any>;
@@ -18,13 +19,19 @@ export default class Game{
     });
     this.renderer = new Renderer();
 
-    window.addEventListener("keypress", ({charCode, keyCode}) => {
+    window.addEventListener("keypress", e => {
+      const {charCode, keyCode} = e;
+      if(keyCodeCommandMap.has(keyCode)) e.preventDefault();
       this.engine.post(EngineWorkerMessageTopic.KEYPRESS, {charCode, keyCode});
     });
-    window.addEventListener("keydown", ({charCode, keyCode}) => {
+    window.addEventListener("keydown", e => {
+      const {charCode, keyCode} = e;
+      if(keyCodeCommandMap.has(keyCode)) e.preventDefault();
       this.engine.post(EngineWorkerMessageTopic.KEYDOWN, {charCode, keyCode});
     });
-    window.addEventListener("keyup", ({charCode, keyCode}) => {
+    window.addEventListener("keyup", e => {
+      const {charCode, keyCode} = e;
+      if(keyCodeCommandMap.has(keyCode)) e.preventDefault();
       this.engine.post(EngineWorkerMessageTopic.KEYUP, {charCode, keyCode});
     });
 

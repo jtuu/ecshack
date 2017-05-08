@@ -3,7 +3,7 @@ import {ComponentType} from "../../Enum";
 
 export interface EnergyState extends ComponentState{
   speed: number;
-  energy: number;
+  value: number;
 }
 
 export interface EnergyComponent extends Component<EnergyState>{
@@ -15,6 +15,6 @@ export const Energy: EnergyComponent = {
   name: ComponentType[ComponentType.Energy],
   state: {
     speed: null,
-    energy: null
+    value: null
   }
 }

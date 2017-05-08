@@ -1,8 +1,8 @@
-import AssemblageData from "./AssemblageData";
+import {AssemblageData} from "./AssemblageData";
 import {ComponentType} from "../../Enum";
 import {ConstantPosition} from "../Components/ConstantPosition";
 
-const TileAssemblageData: AssemblageData = {
+export const TileAssemblageData: AssemblageData = {
   [ComponentType.Tile]: {
     isSeen: true,
     isBlocking: false,
@@ -13,4 +13,3 @@ const TileAssemblageData: AssemblageData = {
     maxSize: 4096
   }
 };
-export default TileAssemblageData;

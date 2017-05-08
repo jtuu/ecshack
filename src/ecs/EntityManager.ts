@@ -10,9 +10,9 @@ import {
   isComponentTypeEnum,
   isComponentName,
 } from "./Components/ComponentUtils";
-import AssemblageData from "./AssemblageData/AssemblageData";
+import {AssemblageData} from "./AssemblageData/AssemblageData";
 import {ComponentType} from "../Enum";
-import Entity from "./Entity";
+import {Entity} from "./Entity";
 
 function equalSets(a: Set<any>, b: Set<any>): boolean{
   if(a.size !== b.size){
@@ -25,7 +25,7 @@ function equalSets(a: Set<any>, b: Set<any>): boolean{
   return true;
 }
 
-export default class EntityManager{
+export class EntityManager{
   private entityCounter: number = 0;
   private entityStore: Map<ComponentType, Map<Entity, Component<any>>> = new Map();
   private componentSubscriptionStore: Map<ComponentType, Map<Set<ComponentType>, Array<Set<Entity>>>> = new Map();

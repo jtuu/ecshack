@@ -28,7 +28,7 @@ declare const TILE_BASE_SIZE: number;
 declare const TILE_SIZE: number;
 declare const TILE_SCALE: number;
 
-declare const SCREEN_TILE_X: number;
-declare const SCREEN_TILE_Y: number;
+declare const SCREEN_TILE_COUNT_X: number;
+declare const SCREEN_TILE_COUNT_Y: number;
 declare const SCREEN_WIDTH: number;
 declare const SCREEN_HEIGHT: number;

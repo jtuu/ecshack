@@ -1,6 +1,6 @@
 import {MersenneTwister} from "../lib/mersenne-twister";
 
-export default class Rng extends MersenneTwister{
+export class Rng extends MersenneTwister{
   public static readonly max: number = 0xffffffff;
   private _seed: number;
 

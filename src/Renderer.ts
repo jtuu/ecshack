@@ -2,12 +2,12 @@ import * as PIXI from "pixi.js";
 import {SpriteId} from "./Enum";
 import {StepReturn} from "./Engine";
 import {UIMapPart} from "./UIState";
-import Entity from "./ecs/Entity";
+import {Entity} from "./ecs/Entity";
 
 const atlasPath = "images/atlas.json";
 const unseeAlpha = 0.5;
 
-export default class Renderer{
+export class Renderer{
   private atlasLoader: PIXI.loaders.Loader;
   private textures: PIXI.loaders.ITextureDictionary;
   private stage: PIXI.Container;
@@ -38,6 +38,13 @@ export default class Renderer{
   public render(state: StepReturn): void{
     const mapData = state.ui && <UIMapPart>state.ui.map;
     if(mapData){
+      for(const [entity, sprite] of this.spriteCache){
+        if(mapData.activeEntities.indexOf(entity) === -1){
+          sprite.visible = false;
+        }else{
+          sprite.visible = true;
+        }
+      }
       mapData.activeEntities.forEach(entity => {
         const entityRenderData = mapData.entityData[entity];
         if(entityRenderData){

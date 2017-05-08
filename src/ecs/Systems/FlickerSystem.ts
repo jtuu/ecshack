@@ -1,9 +1,9 @@
-import System from "./System";
+import {System} from "./System";
 import {ComponentType, Direction} from "../../Enum";
-import Entity from "../Entity";
+import {Entity} from "../Entity";
 import {engine, entityManager} from "../../EngineWorker";
 
-export class FlickerSystem implements System{
+export class FlickerSystem extends System{
   public readonly subscribedComponents: Array<ComponentType> = [ComponentType.Flicker];
 
   public update(entities: Iterable<Entity>){

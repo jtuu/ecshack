@@ -1,8 +1,8 @@
 import * as redux from "redux";
 import {UIStateActionType, SpriteId} from "../Enum";
-import Entity from "../ecs/Entity";
+import {Entity} from "../ecs/Entity";
 import {store} from "./Store";
-import TileMap from "../TileMap";
+import {TileMap} from "../TileMap";
 
 export interface UIStateAction extends redux.Action{
   type: UIStateActionType;
